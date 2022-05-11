@@ -58,6 +58,7 @@ public class ContentService {
     public boolean contentExists(Long contentId) {
         return contentRepository.existsById(contentId);
     }
+
     public boolean licenseOverlapping(Long contentId, Long licenseId) {
         Content content = contentRepository.findById(contentId).get();
         License newLicense = licenseRepository.findById(licenseId).get();
@@ -79,7 +80,44 @@ public class ContentService {
                 return true;
             }
         }
+
+        for (License existingLicense : content.getLicenses()) {
+            if (betweenLicenseWindow(newLicense.getStartTime(), existingLicense)) { //new.startTime in existed check
+                return true;
+            } else if (betweenLicenseWindow(newLicense.getEndTime(), existingLicense)) { //new.endTime in existed check
+                return true;
+            } else if (betweenLicenseWindow(existingLicense.getStartTime(), newLicense)) { //existed.startTime in new check
+                return true;
+            } else if (betweenLicenseWindow(existingLicense.getEndTime(), newLicense)) { //existed.endTime in new check
+                return true;
+            }
+        }
         return false;
+    }
+
+    public boolean licenseOverlappingV2(Long contentId, Long licenseId) {
+        Content content = contentRepository.findById(contentId).get();
+        License newLicense = licenseRepository.findById(licenseId).get();
+        if (content.getLicenses().isEmpty()) {
+            return false;
+        }
+
+        for (License existingLicense : content.getLicenses()) {
+            if (betweenLicenseWindow(newLicense.getStartTime(), existingLicense)) { //new.startTime in existed check
+                return true;
+            } else if (betweenLicenseWindow(newLicense.getEndTime(), existingLicense)) { //new.endTime in existed check
+                return true;
+            } else if (betweenLicenseWindow(existingLicense.getStartTime(), newLicense)) { //existed.startTime in new check
+                return true;
+            } else if (betweenLicenseWindow(existingLicense.getEndTime(), newLicense)) { //existed.endTime in new check
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean betweenLicenseWindow(long variable, License license) {
+        return variable >= license.getStartTime() && variable <= license.getEndTime();
     }
 }
 
