@@ -37,6 +37,7 @@ public class ContentService {
         Content content = contentRepository.findById(contentId).get();
         License license = licenseRepository.findById(licenseId).get();
         content.getLicenses().remove(license);
+        contentRepository.save(content);
         return ("License with id " + licenseId + " is deleted from content with id " + contentId);
     }
     public Content getContent(Long contentId) {
@@ -90,18 +91,6 @@ public class ContentService {
                 return true;
             }
         }
-
-        for (License existingLicense : content.getLicenses()) {
-            if (betweenLicenseWindow(newLicense.getStartTime(), existingLicense)) { //new.startTime in existed check
-                return true;
-            } else if (betweenLicenseWindow(newLicense.getEndTime(), existingLicense)) { //new.endTime in existed check
-                return true;
-            } else if (betweenLicenseWindow(existingLicense.getStartTime(), newLicense)) { //existed.startTime in new check
-                return true;
-            } else if (betweenLicenseWindow(existingLicense.getEndTime(), newLicense)) { //existed.endTime in new check
-                return true;
-            }
-        }
         return false;
     }
 
@@ -111,7 +100,6 @@ public class ContentService {
         if (content.getLicenses().isEmpty()) {
             return false;
         }
-
         for (License existingLicense : content.getLicenses()) {
             if (betweenLicenseWindow(newLicense.getStartTime(), existingLicense)) { //new.startTime in existed check
                 return true;
@@ -125,7 +113,6 @@ public class ContentService {
         }
         return false;
     }
-
     private boolean betweenLicenseWindow(long variable, License license) {
         return variable >= license.getStartTime() && variable <= license.getEndTime();
     }

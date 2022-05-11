@@ -77,7 +77,7 @@ public class ContentController {
         if(contentService.licenseExistsInContent(contentId, licenseId)){
             return ResponseEntity.badRequest().body("The license with id " + licenseId + " has already been added to content with id " + contentId);
         }
-        if(contentService.licenseOverlapping(contentId, licenseId)){
+        if(contentService.licenseOverlappingV2(contentId, licenseId)){
             return ResponseEntity.badRequest().body("The license with id " + licenseId + " is overlapping with existing license");
         }
         return new ResponseEntity<>(contentService.enrollLicenseToContent(contentId, licenseId), HttpStatus.OK);
