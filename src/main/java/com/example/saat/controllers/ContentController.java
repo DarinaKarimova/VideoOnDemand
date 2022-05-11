@@ -74,10 +74,21 @@ public class ContentController {
         if(!contentService.contentExists(contentId)){
             return ResponseEntity.badRequest().body("The license cannot be added, because the content with id " + contentId + " does not exist");
         }
+        if(contentService.licenseExistsInContent(contentId, licenseId)){
+            return ResponseEntity.badRequest().body("The license with id " + licenseId + " has already been added to content with id " + contentId);
+        }
         if(contentService.licenseOverlapping(contentId, licenseId)){
             return ResponseEntity.badRequest().body("The license with id " + licenseId + " is overlapping with existing license");
         }
         return new ResponseEntity<>(contentService.enrollLicenseToContent(contentId, licenseId), HttpStatus.OK);
+    }
+    @DeleteMapping("/{contentId}/license/{licenseId}/delete")
+    ResponseEntity<Object> deleteLicenseFromContent(@PathVariable Long contentId, @PathVariable Long licenseId) {
+        if(!contentService.licenseExistsInContent(contentId, licenseId)){
+            return ResponseEntity.badRequest().body("The license with id " + licenseId + " cannot be deleted from content " + contentId +
+                    ", because the license was not added to the content");
+        }
+        return new ResponseEntity<>(contentService.deleteLicenseFromContent(contentId, licenseId), HttpStatus.OK);
     }
 }
 

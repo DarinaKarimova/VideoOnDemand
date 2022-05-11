@@ -33,6 +33,12 @@ public class ContentService {
         contentRepository.deleteById(contentId);
         return ("Content with id " + contentId + " is deleted");
     }
+    public String deleteLicenseFromContent(Long contentId, Long licenseId) {
+        Content content = contentRepository.findById(contentId).get();
+        License license = licenseRepository.findById(licenseId).get();
+        content.getLicenses().remove(license);
+        return ("License with id " + licenseId + " is deleted from content with id " + contentId);
+    }
     public Content getContent(Long contentId) {
         return contentRepository.findById(contentId).get();
     }
@@ -57,6 +63,11 @@ public class ContentService {
     }
     public boolean contentExists(Long contentId) {
         return contentRepository.existsById(contentId);
+    }
+    public boolean licenseExistsInContent(Long contentId, Long licenseId){
+        Content content = contentRepository.findById(contentId).get();
+        License license = licenseRepository.findById(licenseId).get();
+        return content.getLicenses().contains(license);
     }
     public boolean licenseOverlapping(Long contentId, Long licenseId) {
         Content content = contentRepository.findById(contentId).get();
