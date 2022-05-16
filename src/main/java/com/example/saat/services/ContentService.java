@@ -128,6 +128,22 @@ public class ContentService {
     }
     @Scheduled(cron = "0 0 18 * * *")
     public void scheduledTasks(){
+        Long now = System.currentTimeMillis();
+        List<Content> contents = contentRepository.findAll();
+        for (Content content : contents) {
+            //content.getLicenses().stream().allMatch();
+            int expiredCounter = 0;
+            for (License license : content.getLicenses()) {
+                if (license.getEndTime() < now) {
+                    expiredCounter++;
+                }
+            }
+
+            if (content.getLicenses().size() == expiredCounter) {
+                content.setStatus("InProgress");
+                contentRepository.save(content);
+            }
+        }
     }
 }
 
