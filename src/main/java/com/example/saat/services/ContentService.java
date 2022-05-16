@@ -6,6 +6,7 @@ import com.example.saat.models.License;
 import com.example.saat.repository.ContentRepository;
 import com.example.saat.repository.LicenseRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,6 +55,15 @@ public class ContentService {
         content.setLicenses(contentDetails.getLicenses());
         contentRepository.save(content);
         return ("Content with id " + contentId + " is updated");
+    }
+    public void changeStatus(Long contentId, Long licenseId){
+        Content content = contentRepository.findById(contentId)
+                .orElseThrow(()-> new IllegalStateException("Content not found: " + contentId));
+        if(!licenseOverlappingV2(contentId, licenseId)){
+            content.setStatus("Published");
+        }
+
+        contentRepository.save(content);
     }
     public String enrollLicenseToContent(Long contentId, Long licenseId) {
         Content content = contentRepository.findById(contentId).get();
@@ -115,6 +125,9 @@ public class ContentService {
     }
     private boolean betweenLicenseWindow(long variable, License license) {
         return variable >= license.getStartTime() && variable <= license.getEndTime();
+    }
+    @Scheduled(cron = "0 0 18 * * *")
+    public void scheduledTasks(){
     }
 }
 

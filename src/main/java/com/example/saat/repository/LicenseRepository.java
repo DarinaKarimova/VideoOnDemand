@@ -6,7 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface LicenseRepository extends JpaRepository<License, Long> {
-
-
+//    Long findAllByEndTimeLessThan(Long now);
 
 }
