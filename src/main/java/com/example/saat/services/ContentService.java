@@ -22,18 +22,22 @@ public class ContentService {
         this.contentRepository = contentRepository;
         this.licenseRepository = licenseRepository;
     }
+
     public List<Content> getContents() {
         return contentRepository.findAll();
     }
+
     public String addNewContent(Content content) {
         content.setStatus("InProgress");
         contentRepository.save(content);
-        return("Content has been created");
+        return ("Content has been created");
     }
+
     public String deleteContent(Long contentId) {
         contentRepository.deleteById(contentId);
         return ("Content with id " + contentId + " is deleted");
     }
+
     public String deleteLicenseFromContent(Long contentId, Long licenseId) {
         Content content = contentRepository.findById(contentId).get();
         License license = licenseRepository.findById(licenseId).get();
@@ -41,9 +45,11 @@ public class ContentService {
         contentRepository.save(content);
         return ("License with id " + licenseId + " is deleted from content with id " + contentId);
     }
+
     public Content getContent(Long contentId) {
         return contentRepository.findById(contentId).get();
     }
+
     @Transactional
     public String updateContent(Long contentId, Content contentDetails) {
         Content content = contentRepository.findById(contentId)
@@ -56,35 +62,40 @@ public class ContentService {
         contentRepository.save(content);
         return ("Content with id " + contentId + " is updated");
     }
-    public void changeStatus(Long contentId, Long licenseId){
+
+    public void changeStatus(Long contentId, Long licenseId) {
         Content content = contentRepository.findById(contentId)
-                .orElseThrow(()-> new IllegalStateException("Content not found: " + contentId));
-        if(!licenseOverlappingV2(contentId, licenseId)){
+                .orElseThrow(() -> new IllegalStateException("Content not found: " + contentId));
+        if (!licenseOverlappingV2(contentId, licenseId)) {
             content.setStatus("Published");
         }
 
         contentRepository.save(content);
     }
+
     public String enrollLicenseToContent(Long contentId, Long licenseId) {
         Content content = contentRepository.findById(contentId).get();
         License license = licenseRepository.findById(licenseId).get();
         content.enrollLicense(license);
         Long now = System.currentTimeMillis();
-        if (license.getEndTime() > now){
+        if (license.getEndTime() > now) {
             content.setStatus("Published");
             contentRepository.save(content);
         }
         contentRepository.save(content);
-        return("License with id " + licenseId + " is added to content " + contentId);
+        return ("License with id " + licenseId + " is added to content " + contentId);
     }
+
     public boolean contentExists(Long contentId) {
         return contentRepository.existsById(contentId);
     }
-    public boolean licenseExistsInContent(Long contentId, Long licenseId){
+
+    public boolean licenseExistsInContent(Long contentId, Long licenseId) {
         Content content = contentRepository.findById(contentId).get();
         License license = licenseRepository.findById(licenseId).get();
         return content.getLicenses().contains(license);
     }
+
     public boolean licenseOverlapping(Long contentId, Long licenseId) {
         Content content = contentRepository.findById(contentId).get();
         License newLicense = licenseRepository.findById(licenseId).get();
@@ -99,10 +110,10 @@ public class ContentService {
                     existingLicense.getStartTime() <= newLicense.getEndTime()) {
                 return true;
             } else if (existingLicense.getStartTime() <= newLicense.getStartTime() && newLicense.getEndTime() <= existingLicense.getEndTime() &&
-                    newLicense.getStartTime()<= newLicense.getEndTime()) {
+                    newLicense.getStartTime() <= newLicense.getEndTime()) {
                 return true;
             } else if (existingLicense.getStartTime() >= newLicense.getStartTime() && newLicense.getEndTime() >= existingLicense.getEndTime() &&
-                    existingLicense.getStartTime()<= existingLicense.getEndTime()) {
+                    existingLicense.getStartTime() <= existingLicense.getEndTime()) {
                 return true;
             }
         }
@@ -128,12 +139,14 @@ public class ContentService {
         }
         return false;
     }
+
     private boolean betweenLicenseWindow(long variable, License license) {
         return variable >= license.getStartTime() && variable <= license.getEndTime();
     }
+
     @Scheduled(cron = "0 * * * * *")
     @Transactional
-    public void scheduledTasks(){
+    public void scheduledTasks() {
         Long now = System.currentTimeMillis();
         List<Content> contents = contentRepository.findAll();
 //        for (Content content : contents) {
@@ -150,12 +163,10 @@ public class ContentService {
 //            }
 //        }
         for (Content content : contents) {
-            for(License license : content.getLicenses()){
-                boolean expired = content.getLicenses().stream().allMatch(x -> x.getEndTime() < now);
-                if (expired){
-                    content.setStatus("InProgress");
-                    contentRepository.save(content);
-                }
+            boolean expired = content.getLicenses().stream().allMatch(x -> x.getEndTime() < now);
+            if (expired) {
+                content.setStatus("InProgress");
+                contentRepository.save(content);
             }
         }
     }
