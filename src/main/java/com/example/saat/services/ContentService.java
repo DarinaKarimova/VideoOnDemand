@@ -69,6 +69,11 @@ public class ContentService {
         Content content = contentRepository.findById(contentId).get();
         License license = licenseRepository.findById(licenseId).get();
         content.enrollLicense(license);
+        Long now = System.currentTimeMillis();
+        if (license.getEndTime() > now){
+            content.setStatus("Published");
+            contentRepository.save(content);
+        }
         contentRepository.save(content);
         return("License with id " + licenseId + " is added to content " + contentId);
     }
@@ -126,22 +131,31 @@ public class ContentService {
     private boolean betweenLicenseWindow(long variable, License license) {
         return variable >= license.getStartTime() && variable <= license.getEndTime();
     }
-    @Scheduled(cron = "0 0 18 * * *")
+    @Scheduled(cron = "0 * * * * *")
+    @Transactional
     public void scheduledTasks(){
         Long now = System.currentTimeMillis();
         List<Content> contents = contentRepository.findAll();
+//        for (Content content : contents) {
+//  //      content.getLicenses().stream().allMatch();
+//            int expiredCounter = 0;
+//            for (License license : content.getLicenses()) {
+//                if (license.getEndTime() < now) {
+//                    expiredCounter++;
+//                }
+//            }
+//            if (content.getLicenses().size() == expiredCounter) {
+//                content.setStatus("InProgress");
+//                contentRepository.save(content);
+//            }
+//        }
         for (Content content : contents) {
-            //content.getLicenses().stream().allMatch();
-            int expiredCounter = 0;
-            for (License license : content.getLicenses()) {
-                if (license.getEndTime() < now) {
-                    expiredCounter++;
+            for(License license : content.getLicenses()){
+                boolean expired = content.getLicenses().stream().allMatch(x -> x.getEndTime() < now);
+                if (expired){
+                    content.setStatus("InProgress");
+                    contentRepository.save(content);
                 }
-            }
-
-            if (content.getLicenses().size() == expiredCounter) {
-                content.setStatus("InProgress");
-                contentRepository.save(content);
             }
         }
     }
