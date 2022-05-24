@@ -1,6 +1,8 @@
 package com.example.saat.models;
 
 
+import com.example.saat.constants.ContentStatus;
+
 import javax.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
@@ -12,50 +14,38 @@ public class Content {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private ContentStatus status;
     private String posterUrl;
     private String videoUrl;
-
-
-
+    private String provider;
+    private Integer year;
     @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinTable(joinColumns =
             {
-            @JoinColumn(name = "contents_id", referencedColumnName = "id")
+                    @JoinColumn(name = "contents_id", referencedColumnName = "id")
             },
             inverseJoinColumns = {
-            @JoinColumn(name = "licenses_id", referencedColumnName = "id")
+                    @JoinColumn(name = "licenses_id", referencedColumnName = "id")
             })
     private Set<License> licenses = new HashSet<>();
 
-    public Content(Long id, String name, String status, String posterUrl, String videoUrl, Set<License> licenses) {
+    @OneToMany(mappedBy = "content", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private Set<VideoOperationProcess> processes;
+
+    public Content(Long id, String name, ContentStatus status, String posterUrl, String videoUrl, String provider, Integer year, Set<License> licenses, Set<VideoOperationProcess> processes) {
         this.id = id;
         this.name = name;
         this.status = status;
         this.posterUrl = posterUrl;
         this.videoUrl = videoUrl;
+        this.provider = provider;
+        this.year = year;
         this.licenses = licenses;
+        this.processes = processes;
     }
-
 
     public Content() {
-    }
-
-    public Content(Long id, String name, String status,
-                    String posterUrl, String videoUrl) {
-        this.id = id;
-        this.name = name;
-        this.status = status;
-        this.posterUrl = posterUrl;
-        this.videoUrl = videoUrl;
-    }
-
-    public Content(String name, String status,
-                    String posterUrl, String videoUrl) {
-        this.name = name;
-        this.status = status;
-        this.posterUrl = posterUrl;
-        this.videoUrl = videoUrl;
     }
 
     public Content(Set<License> licenses) {
@@ -78,11 +68,11 @@ public class Content {
         this.name = name;
     }
 
-    public String getStatus() {
+    public ContentStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(ContentStatus status) {
         this.status = status;
     }
 
@@ -110,6 +100,29 @@ public class Content {
         this.videoUrl = videoUrl;
     }
 
+    public String getProvider() {
+        return provider;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
+    }
+
+    public Integer getYear() {
+        return year;
+    }
+
+    public void setYear(Integer year) {
+        this.year = year;
+    }
+
+    public Set<VideoOperationProcess> getProcesses() {
+        return processes;
+    }
+
+    public void setProcesses(Set<VideoOperationProcess> processes) {
+        this.processes = processes;
+    }
 
     @Override
     public String toString() {
@@ -126,8 +139,4 @@ public class Content {
     public void enrollLicense(License license) {
         licenses.add(license);
     }
-
-
-
-
 }

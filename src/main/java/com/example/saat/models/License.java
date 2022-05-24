@@ -86,6 +86,7 @@ public class License {
         this.contents = contents;
     }
 
+
     @Override
     public String toString() {
         return "License{" +

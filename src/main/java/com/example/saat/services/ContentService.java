@@ -1,11 +1,15 @@
 package com.example.saat.services;
 
 
+import com.example.saat.constants.ContentStatus;
 import com.example.saat.models.Content;
+import com.example.saat.models.ContentPage;
 import com.example.saat.models.License;
+import com.example.saat.repository.ContentCriteriaRepository;
 import com.example.saat.repository.ContentRepository;
 import com.example.saat.repository.LicenseRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,11 +19,13 @@ import java.util.List;
 @Service
 public class ContentService {
     private final ContentRepository contentRepository;
+    private final ContentCriteriaRepository contentCriteriaRepository;
     private final LicenseRepository licenseRepository;
 
     @Autowired
-    public ContentService(ContentRepository contentRepository, LicenseRepository licenseRepository) {
+    public ContentService(ContentRepository contentRepository, ContentCriteriaRepository contentCriteriaRepository, LicenseRepository licenseRepository) {
         this.contentRepository = contentRepository;
+        this.contentCriteriaRepository = contentCriteriaRepository;
         this.licenseRepository = licenseRepository;
     }
 
@@ -28,7 +34,7 @@ public class ContentService {
     }
 
     public String addNewContent(Content content) {
-        content.setStatus("InProgress");
+        content.setStatus(ContentStatus.InProgress);
         contentRepository.save(content);
         return ("Content has been created");
     }
@@ -59,27 +65,18 @@ public class ContentService {
         content.setVideoUrl(contentDetails.getVideoUrl());
         content.setStatus(contentDetails.getStatus());
         content.setLicenses(contentDetails.getLicenses());
+        content.setYear(contentDetails.getYear());
+        content.setProvider(contentDetails.getProvider());
         contentRepository.save(content);
         return ("Content with id " + contentId + " is updated");
     }
-
-    public void changeStatus(Long contentId, Long licenseId) {
-        Content content = contentRepository.findById(contentId)
-                .orElseThrow(() -> new IllegalStateException("Content not found: " + contentId));
-        if (!licenseOverlappingV2(contentId, licenseId)) {
-            content.setStatus("Published");
-        }
-
-        contentRepository.save(content);
-    }
-
     public String enrollLicenseToContent(Long contentId, Long licenseId) {
         Content content = contentRepository.findById(contentId).get();
         License license = licenseRepository.findById(licenseId).get();
         content.enrollLicense(license);
         Long now = System.currentTimeMillis();
         if (license.getEndTime() > now) {
-            content.setStatus("Published");
+            content.setStatus(ContentStatus.Published);
             contentRepository.save(content);
         }
         contentRepository.save(content);
@@ -165,11 +162,15 @@ public class ContentService {
         for (Content content : contents) {
             boolean expired = content.getLicenses().stream().allMatch(x -> x.getEndTime() < now);
             if (expired) {
-                content.setStatus("InProgress");
+                content.setStatus(ContentStatus.InProgress);
                 contentRepository.save(content);
             }
         }
     }
+    public Page<Content> getContentsFiltered(ContentPage contentPage, Content content){
+        return contentCriteriaRepository.findAllWithFilters(contentPage, content);
+    }
+
 }
 
 

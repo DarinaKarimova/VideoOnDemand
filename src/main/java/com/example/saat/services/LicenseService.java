@@ -15,11 +15,9 @@ public class LicenseService {
     public LicenseService(LicenseRepository licenseRepository) {
         this.licenseRepository = licenseRepository;
     }
-
     public List<License> getLicenses() {
         return licenseRepository.findAll();
     }
-
     public License getLicense(Long licenseId){
         return licenseRepository.findById(licenseId).get();
     }
@@ -27,7 +25,6 @@ public class LicenseService {
         licenseRepository.save(license);
         return ("License has been created");
     }
-
     public String deleteLicense(Long licenseId) {
 //        boolean exists = licenseRepository.existsById(licenseId);
 //        if(!exists){
@@ -46,7 +43,6 @@ public class LicenseService {
         licenseRepository.save(license);
         return ("License with id " + licenseId + " has been updated");
    }
-
     public boolean licenseExists(Long licenseId){
         return licenseRepository.existsById(licenseId);
     }
