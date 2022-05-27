@@ -1,6 +1,6 @@
 package com.example.saat.controllers;
 
-import com.example.saat.ContentSpecificationBuilder;
+import com.example.saat.Specifications.ContentSpecificationBuilder;
 import com.example.saat.models.Content;
 import com.example.saat.models.ContentPage;
 import com.example.saat.repository.ContentRepository;

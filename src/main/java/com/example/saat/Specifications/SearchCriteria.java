@@ -1,4 +1,4 @@
-package com.example.saat;
+package com.example.saat.Specifications;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
