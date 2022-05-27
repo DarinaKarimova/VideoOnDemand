@@ -1,6 +1,5 @@
 package com.example.saat.controllers;
 
-import com.example.saat.DTOclasses.LoginDto;
 import com.example.saat.DTOclasses.SignUpDto;
 import com.example.saat.jwt.JwtTokenUtil;
 import com.example.saat.models.User;
@@ -14,7 +13,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -37,13 +35,13 @@ public class AuthController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @PostMapping("/signin")
-    public ResponseEntity<String> authenticateUser(@RequestBody LoginDto loginDto){
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                loginDto.getUsername(), loginDto.getPassword()));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        return new ResponseEntity<>("User signed-in successfully!", HttpStatus.OK);
-    }
+//    @PostMapping("/signin")
+//    public ResponseEntity<String> authenticateUser(@RequestBody LoginDto loginDto){
+//        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+//                loginDto.getUsername(), loginDto.getPassword()));
+//        SecurityContextHolder.getContext().setAuthentication(authentication);
+//        return new ResponseEntity<>("User signed-in successfully!", HttpStatus.OK);
+//    }
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@RequestBody SignUpDto signUpDto){
         if(userRepository.existsByUsername(signUpDto.getUsername())){
