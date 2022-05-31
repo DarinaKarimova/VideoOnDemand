@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Objects;
 
 @Service
 @AllArgsConstructor
@@ -36,18 +35,14 @@ public class ContentService {
         return ("Content has been created");
     }
 
-    public Object deleteContent(Long contentId) {
-        if(Objects.equals(contentValidator.isContentExists(contentId), true)) {
-            contentRepository.deleteById(contentId);
-            return ("Content with id " + contentId + " is deleted");
-        }
-        return contentValidator.isContentExists(contentId);
+    public String deleteContent(Long contentId) {
+        contentValidator.isContentExists(contentId);
+        contentRepository.deleteById(contentId);
+        return "Content with id " +contentId + " is deleted";
     }
 
     public String deleteLicenseFromContent(Long contentId, Long licenseId) {
-        if(Objects.equals(contentValidator.isLicenseExistsInContent(contentId, licenseId), false))
-            return "The license with id " + licenseId + " cannot be deleted from content " + contentId +
-                    ", because the license was not added to the content";
+        contentValidator.isLicenseExistsInContentToDelete(contentId, licenseId);
         Content content = contentRepository.findById(contentId).get();
         License license = licenseRepository.findById(licenseId).get();
         content.getLicenses().remove(license);
@@ -55,16 +50,14 @@ public class ContentService {
         return ("License with id " + licenseId + " is deleted from content with id " + contentId);
     }
 
-    public Object getContent(Long contentId) {
-        if(Objects.equals(contentValidator.isContentExists(contentId), true))
-            return contentRepository.findById(contentId).get();
-        return contentValidator.isContentExists(contentId);
+    public Content getContent(Long contentId) {
+        contentValidator.isContentExists(contentId);
+        return contentRepository.findById(contentId).get();
     }
 
     @Transactional
     public Object updateContent(Long contentId, Content contentDetails) {
-        if(!Objects.equals(contentValidator.isContentExists(contentId), true))
-            return contentValidator.isContentExists(contentId);
+        contentValidator.isContentExists(contentId);
         Content content = contentRepository.findById(contentId).get();
         content.setName(contentDetails.getName());
         content.setPosterUrl(contentDetails.getPosterUrl());
@@ -78,12 +71,9 @@ public class ContentService {
         return ("Content with id " + contentId + " is updated");
     }
     public Object enrollLicenseToContent(Long contentId, Long licenseId) {
-        if(!Objects.equals(contentValidator.isContentExists(contentId), true))
-            return contentValidator.isContentExists(contentId);
-        if(!Objects.equals(contentValidator.isLicenseExistsInContent(contentId, licenseId), false))
-            return contentValidator.isLicenseExistsInContent(contentId, licenseId);
-        if(!Objects.equals(contentValidator.isLicenseOverlappingV2(contentId, licenseId), false))
-            return contentValidator.isLicenseOverlappingV2(contentId, licenseId);
+        contentValidator.isContentExists(contentId);
+        contentValidator.isLicenseExistsInContent(contentId, licenseId);
+        contentValidator.isLicenseOverlappingV2(contentId, licenseId);
         Content content = contentRepository.findById(contentId).get();
         License license = licenseRepository.findById(licenseId).get();
         content.enrollLicense(license);

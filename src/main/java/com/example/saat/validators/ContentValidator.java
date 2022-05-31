@@ -4,6 +4,8 @@ import com.example.saat.models.Content;
 import com.example.saat.models.License;
 import com.example.saat.repository.ContentRepository;
 import com.example.saat.repository.LicenseRepository;
+import exceptions.BadRequestException;
+import exceptions.ResourceNotFoundException;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -13,38 +15,40 @@ public class ContentValidator {
     private ContentRepository contentRepository;
     private LicenseRepository licenseRepository;
 
-    public Object isContentExists(Long contentId){
+    public void isContentExists(Long contentId){
         if(!contentRepository.existsById(contentId))
-            return ("Content with id " + contentId + " does not exist");
-        return true;
+            throw new ResourceNotFoundException("Content with id " + contentId + " does not exist");
     }
 
-    public Object isLicenseExistsInContent(Long contentId, Long licenseId){
+    public void isLicenseExistsInContent(Long contentId, Long licenseId){
         Content content = contentRepository.findById(contentId).get();
         License license = licenseRepository.findById(licenseId).get();
         if(content.getLicenses().contains(license))
-            return "The license with id " + licenseId + " exists in content with id " + contentId;
-        return false;
+            throw new BadRequestException("The license with id " + licenseId + " exists in content with id " + contentId);
     }
 
-    public Object isLicenseOverlappingV2(Long contentId, Long licenseId) {
+    public void isLicenseExistsInContentToDelete(Long contentId, Long licenseId) {
+        Content content = contentRepository.findById(contentId).get();
+        License license = licenseRepository.findById(licenseId).get();
+        if(!content.getLicenses().contains(license))
+            throw new BadRequestException("The license with id " + licenseId + " cannot be removed from content with id " +
+                    contentId + ", because content does not contain this license");
+    }
+
+    public void isLicenseOverlappingV2(Long contentId, Long licenseId) {
         Content content = contentRepository.findById(contentId).get();
         License newLicense = licenseRepository.findById(licenseId).get();
-        if (content.getLicenses().isEmpty()) {
-            return false;
-        }
         for (License existingLicense : content.getLicenses()) {
             if (betweenLicenseWindow(newLicense.getStartTime(), existingLicense)) { //new.startTime in existed check
-                return "The license with id " + licenseId + " is overlapping with existing license";
+                throw new BadRequestException("The license with id " + licenseId + " is overlapping with existing license");
             } else if (betweenLicenseWindow(newLicense.getEndTime(), existingLicense)) { //new.endTime in existed check
-                return "The license with id " + licenseId + " is overlapping with existing license";
+                throw new BadRequestException("The license with id " + licenseId + " is overlapping with existing license");
             } else if (betweenLicenseWindow(existingLicense.getStartTime(), newLicense)) { //existed.startTime in new check
-                return "The license with id " + licenseId + " is overlapping with existing license";
+                throw new BadRequestException("The license with id " + licenseId + " is overlapping with existing license");
             } else if (betweenLicenseWindow(existingLicense.getEndTime(), newLicense)) { //existed.endTime in new check
-                return "The license with id " + licenseId + " is overlapping with existing license";
+                throw new BadRequestException("The license with id " + licenseId + " is overlapping with existing license");
             }
         }
-        return false;
     }
     private boolean betweenLicenseWindow(long variable, License license) {
         return variable >= license.getStartTime() && variable <= license.getEndTime();
