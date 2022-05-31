@@ -8,26 +8,23 @@ import com.example.saat.models.License;
 import com.example.saat.repository.ContentCriteriaRepository;
 import com.example.saat.repository.ContentRepository;
 import com.example.saat.repository.LicenseRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.saat.validators.ContentValidator;
+import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
+@AllArgsConstructor
 public class ContentService {
     private final ContentRepository contentRepository;
     private final ContentCriteriaRepository contentCriteriaRepository;
     private final LicenseRepository licenseRepository;
-
-    @Autowired
-    public ContentService(ContentRepository contentRepository, ContentCriteriaRepository contentCriteriaRepository, LicenseRepository licenseRepository) {
-        this.contentRepository = contentRepository;
-        this.contentCriteriaRepository = contentCriteriaRepository;
-        this.licenseRepository = licenseRepository;
-    }
+    private final ContentValidator contentValidator;
 
     public List<Content> getContents() {
         return contentRepository.findAll();
@@ -39,12 +36,18 @@ public class ContentService {
         return ("Content has been created");
     }
 
-    public String deleteContent(Long contentId) {
-        contentRepository.deleteById(contentId);
-        return ("Content with id " + contentId + " is deleted");
+    public Object deleteContent(Long contentId) {
+        if(Objects.equals(contentValidator.isContentExists(contentId), true)) {
+            contentRepository.deleteById(contentId);
+            return ("Content with id " + contentId + " is deleted");
+        }
+        return contentValidator.isContentExists(contentId);
     }
 
     public String deleteLicenseFromContent(Long contentId, Long licenseId) {
+        if(Objects.equals(contentValidator.isLicenseExistsInContent(contentId, licenseId), false))
+            return "The license with id " + licenseId + " cannot be deleted from content " + contentId +
+                    ", because the license was not added to the content";
         Content content = contentRepository.findById(contentId).get();
         License license = licenseRepository.findById(licenseId).get();
         content.getLicenses().remove(license);
@@ -52,14 +55,17 @@ public class ContentService {
         return ("License with id " + licenseId + " is deleted from content with id " + contentId);
     }
 
-    public Content getContent(Long contentId) {
-        return contentRepository.findById(contentId).get();
+    public Object getContent(Long contentId) {
+        if(Objects.equals(contentValidator.isContentExists(contentId), true))
+            return contentRepository.findById(contentId).get();
+        return contentValidator.isContentExists(contentId);
     }
 
     @Transactional
-    public String updateContent(Long contentId, Content contentDetails) {
-        Content content = contentRepository.findById(contentId)
-                .orElseThrow(() -> new IllegalStateException("Content not found: " + contentId));
+    public Object updateContent(Long contentId, Content contentDetails) {
+        if(!Objects.equals(contentValidator.isContentExists(contentId), true))
+            return contentValidator.isContentExists(contentId);
+        Content content = contentRepository.findById(contentId).get();
         content.setName(contentDetails.getName());
         content.setPosterUrl(contentDetails.getPosterUrl());
         content.setVideoUrl(contentDetails.getVideoUrl());
@@ -67,10 +73,17 @@ public class ContentService {
         content.setLicenses(contentDetails.getLicenses());
         content.setYear(contentDetails.getYear());
         content.setProvider(contentDetails.getProvider());
+        content.setProcesses(contentDetails.getProcesses());
         contentRepository.save(content);
         return ("Content with id " + contentId + " is updated");
     }
-    public String enrollLicenseToContent(Long contentId, Long licenseId) {
+    public Object enrollLicenseToContent(Long contentId, Long licenseId) {
+        if(!Objects.equals(contentValidator.isContentExists(contentId), true))
+            return contentValidator.isContentExists(contentId);
+        if(!Objects.equals(contentValidator.isLicenseExistsInContent(contentId, licenseId), false))
+            return contentValidator.isLicenseExistsInContent(contentId, licenseId);
+        if(!Objects.equals(contentValidator.isLicenseOverlappingV2(contentId, licenseId), false))
+            return contentValidator.isLicenseOverlappingV2(contentId, licenseId);
         Content content = contentRepository.findById(contentId).get();
         License license = licenseRepository.findById(licenseId).get();
         content.enrollLicense(license);
@@ -81,16 +94,6 @@ public class ContentService {
         }
         contentRepository.save(content);
         return ("License with id " + licenseId + " is added to content " + contentId);
-    }
-
-    public boolean contentExists(Long contentId) {
-        return contentRepository.existsById(contentId);
-    }
-
-    public boolean licenseExistsInContent(Long contentId, Long licenseId) {
-        Content content = contentRepository.findById(contentId).get();
-        License license = licenseRepository.findById(licenseId).get();
-        return content.getLicenses().contains(license);
     }
 
     public boolean licenseOverlapping(Long contentId, Long licenseId) {
@@ -115,30 +118,6 @@ public class ContentService {
             }
         }
         return false;
-    }
-
-    public boolean licenseOverlappingV2(Long contentId, Long licenseId) {
-        Content content = contentRepository.findById(contentId).get();
-        License newLicense = licenseRepository.findById(licenseId).get();
-        if (content.getLicenses().isEmpty()) {
-            return false;
-        }
-        for (License existingLicense : content.getLicenses()) {
-            if (betweenLicenseWindow(newLicense.getStartTime(), existingLicense)) { //new.startTime in existed check
-                return true;
-            } else if (betweenLicenseWindow(newLicense.getEndTime(), existingLicense)) { //new.endTime in existed check
-                return true;
-            } else if (betweenLicenseWindow(existingLicense.getStartTime(), newLicense)) { //existed.startTime in new check
-                return true;
-            } else if (betweenLicenseWindow(existingLicense.getEndTime(), newLicense)) { //existed.endTime in new check
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean betweenLicenseWindow(long variable, License license) {
-        return variable >= license.getStartTime() && variable <= license.getEndTime();
     }
 
     @Scheduled(cron = "0 * * * * *")
